@@ -38,7 +38,7 @@ def run_export(pair: str, model_name: str) -> None:
         ]
     else:
         raise RuntimeError(
-            "pip install -r requirements.txt""
+            "pip install -r requirements.txt"
         )
 
     run_cmd(cmd)

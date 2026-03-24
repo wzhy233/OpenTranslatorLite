@@ -74,7 +74,6 @@ public class SetupWizard {
     private final JButton closeButton = new JButton("Close");
     private final JButton themeButton = new JButton();
     private final JLabel headerTitle = new JLabel("OpenTranslatorLite Setup");
-    private final JLabel headerSubtitle = new JLabel("Every device must complete setup and sign the license before runtime use.");
     private final JLabel railCaption = new JLabel("Setup Flow");
     private final JLabel[] stepLabels = new JLabel[STEP_IDS.length];
     private final AnimatedCards cards = new AnimatedCards();
@@ -121,11 +120,10 @@ public class SetupWizard {
         text.setLayout(new BoxLayout(text, BoxLayout.Y_AXIS));
 
         headerTitle.setFont(headerTitle.getFont().deriveFont(Font.BOLD, 28f));
-        headerSubtitle.setFont(headerSubtitle.getFont().deriveFont(Font.PLAIN, 14f));
 
         text.add(headerTitle);
         text.add(Box.createVerticalStrut(8));
-        text.add(headerSubtitle);
+
 
         themeButton.addActionListener(this::toggleTheme);
         updateThemeButton();
@@ -561,7 +559,6 @@ public class SetupWizard {
         Color stepBackground = UIManager.getColor("Panel.background");
 
         headerTitle.setForeground(headerForeground);
-        headerSubtitle.setForeground(subtitleForeground);
         railCaption.setForeground(labelForeground);
         logArea.setBackground(UIManager.getColor("TextArea.background"));
         logArea.setForeground(labelForeground);

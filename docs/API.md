@@ -5,13 +5,6 @@
 ```java
 import io.github.wzhy233.open_translator.Translator;
 ```
-
-运行前提
-
-- 先执行 `python scripts/init_models.py` 下载外部 CTranslate2 模型
-- Java 进程需要能找到可用的 Python 解释器
-- 如果缺少依赖、模型或许可证确认，桌面环境下会自动弹出设置向导
-
 ## 构造方法
 
 ### `Translator()`

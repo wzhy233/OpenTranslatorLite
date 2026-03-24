@@ -2,7 +2,7 @@
 
 ## 简介
 
-OpenTranslatorLite是一款基于 ONNXRuntime + Marian 的轻量级实时神经网络翻译项目
+OpenTranslatorLite是一款基于 ONNXRuntime + Marian 的轻量级开源神经网络翻译项目
 
 ### 特性
 

@@ -132,6 +132,3 @@ translator.setCachePath("D:/translator-cache");
 
 真实模型测试与测试前置说明见 [docs/TEST_SETUP.md](docs/TEST_SETUP.md)
 
-------------------
-
-

@@ -66,7 +66,7 @@ public final class RuntimeSetupManager {
         }
         throw new IllegalStateException(
                 "OpenTranslatorLite runtime is blocked: " + status.describeProblems()
-                        + ". This software cannot be used until setup UI is completed and the license is signed on this device."
+                        + "."
         );
     }
 

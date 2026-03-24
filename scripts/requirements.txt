@@ -1,0 +1,9 @@
+transformers==4.38.2
+torch==2.2.2
+onnx==1.13.1
+onnxruntime==1.17.1
+sentencepiece==0.1.99
+optimum[onnxruntime]==1.17.1
+numpy==1.26.2
+ml_dtypes
+sacremoses

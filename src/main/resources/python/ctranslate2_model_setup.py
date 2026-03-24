@@ -1,6 +1,6 @@
 import argparse
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 from huggingface_hub import snapshot_download
 
@@ -10,37 +10,19 @@ MODELS = {
     "zh_en": "gaudi/opus-mt-zh-en-ctranslate2",
 }
 
-DEFAULT_MODEL_ROOT = (
-    Path.home() / ".open_translator" / "OpenTranslatorLite" / "models" / "ctranslate2"
-)
 
-
-def parse_args() -> argparse.Namespace:
+def parse_args():
     parser = argparse.ArgumentParser(description="Download CTranslate2 models for OpenTranslatorLite")
-    parser.add_argument(
-        "--model-root",
-        default=str(DEFAULT_MODEL_ROOT),
-        help="Target directory for downloaded CTranslate2 models.",
-    )
-    parser.add_argument(
-        "--pair",
-        choices=("en_zh", "zh_en", "all"),
-        default="all",
-        help="Download only one language pair or all pairs.",
-    )
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="Re-download and overwrite existing model directories.",
-    )
+    parser.add_argument("--model-root", required=True)
+    parser.add_argument("--pair", choices=("en_zh", "zh_en", "all"), default="all")
+    parser.add_argument("--force", action="store_true")
     return parser.parse_args()
 
 
-def download_pair(pair: str, repo_id: str, model_root: Path, force: bool) -> None:
+def download_pair(pair, repo_id, model_root, force):
     local_dir = model_root / pair
     if force and local_dir.exists():
         shutil.rmtree(local_dir)
-
     local_dir.mkdir(parents=True, exist_ok=True)
     print(f"Downloading {pair} from {repo_id} -> {local_dir}")
     snapshot_download(
@@ -60,7 +42,7 @@ def download_pair(pair: str, repo_id: str, model_root: Path, force: bool) -> Non
     )
 
 
-def main() -> int:
+def main():
     args = parse_args()
     model_root = Path(args.model_root).expanduser().resolve()
     model_root.mkdir(parents=True, exist_ok=True)
@@ -69,7 +51,7 @@ def main() -> int:
     for pair, repo_id in pairs:
         download_pair(pair, repo_id, model_root, args.force)
 
-    print(f"\nModels ready under: {model_root}")
+    print(f"Models ready under: {model_root}")
     return 0
 
 

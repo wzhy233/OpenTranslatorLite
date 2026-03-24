@@ -246,6 +246,9 @@ public class Translator {
                     Thread.currentThread().interrupt();
                 }
             }
+            if (model != null) {
+                model.close();
+            }
         }
     }
 

@@ -21,12 +21,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.microsoft.onnxruntime</groupId>
-            <artifactId>onnxruntime</artifactId>
-            <version>1.16.3</version>
-        </dependency>
-
-        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
@@ -45,9 +39,15 @@
         </dependency>
 
         <dependency>
-            <groupId>ai.djl.sentencepiece</groupId>
-            <artifactId>sentencepiece</artifactId>
-            <version>0.36.0</version>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>3.5.4</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-all</artifactId>
+            <version>0.64.8</version>
         </dependency>
 
         <dependency>
@@ -63,11 +63,23 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <includes>
-                    <include>**/*.onnx</include>
-                    <include>**/*.txt</include>
-                    <include>**/*.spm</include>
-                    <include>**/*.json</include>
                     <include>**/*.xml</include>
+                    <include>**/*.py</include>
+                    <include>**/*.txt</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${project.basedir}</directory>
+                <includes>
+                    <include>LICENSE.txt</include>
+                    <include>README.md</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${project.basedir}/docs</directory>
+                <targetPath>docs</targetPath>
+                <includes>
+                    <include>**/*</include>
                 </includes>
             </resource>
         </resources>
@@ -79,22 +91,6 @@
                 <version>3.10.1</version>
             </plugin>
 
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>3.4.1</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 </project>

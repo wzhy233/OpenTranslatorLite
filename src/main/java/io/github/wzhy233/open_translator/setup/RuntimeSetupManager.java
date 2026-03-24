@@ -13,7 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -72,7 +71,7 @@ public final class RuntimeSetupManager {
     }
 
     public static void installDependencies(String pythonPath, Consumer<String> loggerConsumer) {
-        Path requirements = extractBundledResource("/python/requirements-ctranslate2.txt", "requirements", ".txt");
+        Path requirements = extractBundledResource("/python/requirements.txt", "requirements", ".txt");
         runCommand(loggerConsumer, List.of(
                 pythonPath, "-m", "pip", "install", "-r", requirements.toString()
         ));

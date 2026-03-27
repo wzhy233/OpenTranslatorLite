@@ -35,7 +35,7 @@ public class Translator {
     private volatile Set<String> supportedPairs = Collections.emptySet();
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
-
+    private static final String VERSION = "1.0.0";
     /**
      * 创建翻译器
      */
@@ -275,6 +275,10 @@ public class Translator {
         if (isShutdown.get()) throw new IllegalStateException("Translator is closed");
         if (!isInitialized.get()) throw new IllegalStateException("Translator is not initialized");
     }
+
+    public static String getVersion() {
+            return VERSION;
+        }
 
     public static class CacheStatistics {
         public final int totalEntries;

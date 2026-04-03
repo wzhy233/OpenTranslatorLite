@@ -6,7 +6,7 @@
 
     <groupId>io.github.wzhy233</groupId>
     <artifactId>open-translator-lite</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>OpenTranslatorLite</name>

@@ -15,8 +15,11 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.build.resourcesEncoding>UTF-8</project.build.resourcesEncoding>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
+        <translator.build.variant>full</translator.build.variant>
+        <translator.finalName>${project.artifactId}-${project.version}</translator.finalName>
     </properties>
 
     <dependencies>
@@ -39,18 +42,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.formdev</groupId>
-            <artifactId>flatlaf</artifactId>
-            <version>3.5.4</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.vladsch.flexmark</groupId>
-            <artifactId>flexmark-all</artifactId>
-            <version>0.64.8</version>
-        </dependency>
-
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.13.2</version>
@@ -59,6 +50,7 @@
     </dependencies>
 
     <build>
+        <finalName>${translator.finalName}</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -66,6 +58,13 @@
                     <include>**/*.xml</include>
                     <include>**/*.py</include>
                     <include>**/*.txt</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>open-translator-build.properties</include>
                 </includes>
             </resource>
             <resource>
@@ -85,6 +84,97 @@
         </resources>
 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <configuration>
+                            <target>
+                                <exec executable="git" outputproperty="translator.git.branch" failifexecutionfails="false" failonerror="false">
+                                    <arg value="rev-parse"/>
+                                    <arg value="--abbrev-ref"/>
+                                    <arg value="HEAD"/>
+                                </exec>
+                                <exec executable="git" outputproperty="translator.git.remoteBranch" failifexecutionfails="false" failonerror="false">
+                                    <arg value="rev-parse"/>
+                                    <arg value="--abbrev-ref"/>
+                                    <arg value="--symbolic-full-name"/>
+                                    <arg value="@{u}"/>
+                                </exec>
+                                <exec executable="git" outputproperty="translator.git.commit" failifexecutionfails="false" failonerror="false">
+                                    <arg value="rev-parse"/>
+                                    <arg value="--short"/>
+                                    <arg value="HEAD"/>
+                                </exec>
+                                <condition property="translator.git.branch.resolved" value="${translator.git.branch}" else="unknown">
+                                    <and>
+                                        <isset property="translator.git.branch"/>
+                                        <not>
+                                            <equals arg1="${translator.git.branch}" arg2="" trim="true"/>
+                                        </not>
+                                    </and>
+                                </condition>
+                                <condition property="translator.git.remoteBranch.resolved" value="${translator.git.remoteBranch}" else="${translator.git.branch.resolved}">
+                                    <and>
+                                        <isset property="translator.git.remoteBranch"/>
+                                        <not>
+                                            <equals arg1="${translator.git.remoteBranch}" arg2="" trim="true"/>
+                                        </not>
+                                    </and>
+                                </condition>
+                                <condition property="translator.git.commit.resolved" value="${translator.git.commit}" else="unknown">
+                                    <and>
+                                        <isset property="translator.git.commit"/>
+                                        <not>
+                                            <equals arg1="${translator.git.commit}" arg2="" trim="true"/>
+                                        </not>
+                                    </and>
+                                </condition>
+                                <mkdir dir="${project.build.directory}"/>
+                                <echo file="${project.build.directory}/generated-git.properties">translator.git.branch=${translator.git.branch.resolved}
+translator.git.remoteBranch=${translator.git.remoteBranch.resolved}
+translator.git.commit=${translator.git.commit.resolved}
+</echo>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <files>
+                                <file>${project.build.directory}/generated-git.properties</file>
+                            </files>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <propertiesEncoding>UTF-8</propertiesEncoding>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -121,4 +211,57 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>full-build</id>
+            <dependencies>
+                <dependency>
+                    <groupId>com.formdev</groupId>
+                    <artifactId>flatlaf</artifactId>
+                    <version>3.5.4</version>
+                </dependency>
+
+                <dependency>
+                    <groupId>com.vladsch.flexmark</groupId>
+                    <artifactId>flexmark-all</artifactId>
+                    <version>0.64.8</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.6.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-full-build-sources</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>add-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/full/java</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>silent-build</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <translator.build.variant>silent</translator.build.variant>
+                <translator.finalName>${project.artifactId}-${project.version}-silent</translator.finalName>
+            </properties>
+        </profile>
+    </profiles>
 </project>

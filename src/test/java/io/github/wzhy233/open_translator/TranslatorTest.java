@@ -12,7 +12,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class TranslatorTest {
-    private static final TestSetup TEST_SETUP = new TestSetup();
+    private static final TranslatorTestSupport TEST_SETUP = new TranslatorTestSupport();
     private static Translator translator;
 
     @BeforeClass

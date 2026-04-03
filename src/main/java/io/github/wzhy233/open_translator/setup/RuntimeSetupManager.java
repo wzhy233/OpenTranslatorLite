@@ -1,5 +1,6 @@
 package io.github.wzhy233.open_translator.setup;
 
+import io.github.wzhy233.open_translator.BuildInfo;
 import io.github.wzhy233.open_translator.config.ConfigManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ public final class RuntimeSetupManager {
     };
     private static final String[] REQUIRED_PAIRS = {"en_zh", "zh_en"};
     private static final String UI_ENABLED_PROP = "open_translator.ui.enabled";
+    private static final String SILENT_PROP = "open_translator.silent";
     private static final String PYTHON_PROP = "open_translator.python";
     private static final String MODEL_ROOT_PROP = "open_translator.model_root";
 
@@ -54,17 +56,22 @@ public final class RuntimeSetupManager {
     }
 
     public static SetupStatus ensureReady(boolean interactive) {
+        if (isSilentMode()) {
+            autoAcceptLicense();
+            interactive = false;
+        }
         SetupStatus status = inspect();
         if (status.isReady()) {
             return status;
         }
         if (interactive && isUiEnabled() && !GraphicsEnvironment.isHeadless()) {
-            SetupWizard wizard = new SetupWizard(status);
-            wizard.showDialog();
-            status = inspect();
-            if (status.isReady()) {
-                return status;
+            if (showSetupWizard(status)) {
+                status = inspect();
+                if (status.isReady()) {
+                    return status;
+                }
             }
+            status = inspect();
         }
         throw new IllegalStateException(
                 "OpenTranslatorLite runtime is blocked: " + status.describeProblems()
@@ -101,6 +108,31 @@ public final class RuntimeSetupManager {
 
     private static boolean isUiEnabled() {
         return Boolean.parseBoolean(System.getProperty(UI_ENABLED_PROP, "true"));
+    }
+
+    private static boolean isSilentMode() {
+        return BuildInfo.isSilentBuild()
+                || Boolean.parseBoolean(System.getProperty(SILENT_PROP, "false"));
+    }
+
+    private static void autoAcceptLicense() {
+        if (!ConfigManager.isLicenseAccepted()) {
+            ConfigManager.acceptLicense("silent-build");
+        }
+    }
+
+    private static boolean showSetupWizard(SetupStatus status) {
+        try {
+            Class<?> wizardClass = Class.forName("io.github.wzhy233.open_translator.setup.SetupWizard");
+            Object wizard = wizardClass.getConstructor(SetupStatus.class).newInstance(status);
+            wizardClass.getMethod("showDialog").invoke(wizard);
+            return true;
+        } catch (ClassNotFoundException e) {
+            logger.info("Setup UI is not bundled in this build");
+            return false;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to launch setup wizard", e);
+        }
     }
 
     private static String resolvePythonExecutable() {

@@ -75,15 +75,16 @@ class Worker:
         return pairs
 
     def translate(self, pair: str, text: str) -> str:
+        return self.translate_batch(pair, [text], 1)[0]
+
+    def translate_batch(self, pair: str, texts, max_batch_size: int):
         runtime = self._load_pair(pair)
         tokenizer = runtime["tokenizer"]
         translator = runtime["translator"]
 
-        tokens = tokenizer.encode(pair, text)
-
-        results = translator.translate_batch([tokens], max_batch_size=1)
-        hypothesis = results[0].hypotheses[0]
-        return tokenizer.decode(hypothesis)
+        token_batches = [tokenizer.encode(pair, text) for text in texts]
+        results = translator.translate_batch(token_batches, max_batch_size=max(1, max_batch_size))
+        return [tokenizer.decode(result.hypotheses[0]) for result in results]
 
     def _load_pair(self, pair: str):
         runtime = self._models.get(pair)
@@ -136,6 +137,11 @@ def main():
                 pair = request["pair"]
                 text = request["text"]
                 respond({"ok": True, "text": worker.translate(pair, text)})
+            elif command == "translate_batch":
+                pair = request["pair"]
+                texts = request["texts"]
+                max_batch_size = int(request.get("max_batch_size", 8))
+                respond({"ok": True, "texts": worker.translate_batch(pair, texts, max_batch_size)})
             elif command == "shutdown":
                 respond({"ok": True})
                 return 0

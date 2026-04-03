@@ -65,6 +65,37 @@ python scripts/init_models.py
 mvn package
 ```
 
+默认构建为 `silent` 变体，也可以显式执行：
+
+```cmd
+powershell -ExecutionPolicy Bypass -File scripts\build-translator.ps1 --silent
+```
+
+`silent` 变体会跳过 setup 向导入口、自动签署本机 license，并且构建产物不包含 `SetupWizard`、`flatlaf`、`flexmark`。
+输出文件：
+
+```text
+target/open-translator-lite-1.0.0-silent.jar
+```
+
+如果你需要包含 setup UI 的 `full` 构建，执行：
+
+```bash
+mvn -Pfull-build clean package
+```
+
+输出文件：
+
+```text
+target/open-translator-lite-1.0.0.jar
+```
+
+如果你只是运行测试，直接执行：
+
+```bash
+mvn clean test
+```
+
 ## 快速开始
 
 ```java
@@ -87,6 +118,12 @@ public class Demo {
         }
     }
 }
+```
+
+如果要显式强制静默运行模式，也可以添加 JVM 参数：
+
+```text
+-Dopen_translator.silent=true
 ```
 
 ## 缓存

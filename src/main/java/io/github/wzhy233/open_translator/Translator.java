@@ -23,6 +23,7 @@ public class Translator {
                     "╚██████╔╝██║     ███████╗██║ ╚████║   ██║   ██║  ██║██║  ██║██║ ╚████║███████║███████╗██║  ██║   ██║   ╚██████╔╝██║  ██║\n" +
                     " ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝\n" +
                     "\n" +
+                    BuildInfo.getBannerLine() +
                     "                         GitHub: https://github.com/wzhy233/OpenTranslatorLite\n" +
                     "                         Author: wzhy233\n";
 
@@ -32,12 +33,11 @@ public class Translator {
     private volatile Set<String> supportedPairs = Collections.emptySet();
     private final AtomicBoolean isInitialized = new AtomicBoolean(false);
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
-    private static final String VERSION = "1.0.0";
     /**
      * 创建翻译器
      */
     public Translator() {
-        this(ConfigManager.getCachePath(), 4);
+        this(ConfigManager.getCachePath(), TranslationModel.defaultWorkerCount());
     }
 
     /**
@@ -46,7 +46,7 @@ public class Translator {
      * @param cachePath 缓存目录
      */
     public Translator(String cachePath) {
-        this(cachePath, 4);
+        this(cachePath, TranslationModel.defaultWorkerCount());
     }
 
     /**
@@ -56,7 +56,7 @@ public class Translator {
      * @param threadPoolSize 线程池大小
      */
     public Translator(String cachePath, int threadPoolSize) {
-        if (threadPoolSize <= 0) threadPoolSize = 4;
+        if (threadPoolSize <= 0) threadPoolSize = TranslationModel.defaultWorkerCount();
 
         this.executorService = Executors.newFixedThreadPool(threadPoolSize);
         this.cache = new CacheManager(cachePath);
@@ -161,23 +161,66 @@ public class Translator {
         if (contents.length == 0) {
             return new String[0];
         }
-        List<Callable<String>> tasks = new ArrayList<>(contents.length);
-        for (String content : contents) {
-            tasks.add(() -> translate(sourceLang, targetLang, content));
+
+        if (sourceLang == null || targetLang == null) {
+            throw new IllegalArgumentException("Arguments must not be null");
         }
+
+        sourceLang = sourceLang.toLowerCase().trim();
+        targetLang = targetLang.toLowerCase().trim();
+
+        String[] results = new String[contents.length];
+        if (sourceLang.equals(targetLang)) {
+            System.arraycopy(contents, 0, results, 0, contents.length);
+            return results;
+        }
+
+        String pair = sourceLang + "-" + targetLang;
+        if (!isSupportedPair(pair)) {
+            throw new IllegalArgumentException("Unsupported language pair: " + pair);
+        }
+
+        List<Integer> uncachedIndexes = new ArrayList<>(contents.length);
+        List<String> uncachedContents = new ArrayList<>(contents.length);
+
+        for (int i = 0; i < contents.length; i++) {
+            String content = contents[i];
+            if (content == null) {
+                throw new IllegalArgumentException("Contents must not contain null values");
+            }
+            if (content.trim().isEmpty()) {
+                results[i] = "";
+                continue;
+            }
+
+            String normalized = normalizeContent(content);
+            String cached = cache.get(sourceLang, targetLang, normalized);
+            if (cached != null) {
+                results[i] = cached;
+                continue;
+            }
+            uncachedIndexes.add(i);
+            uncachedContents.add(normalized);
+        }
+
+        if (uncachedContents.isEmpty()) {
+            return results;
+        }
+
         try {
-            List<Future<String>> futures = executorService.invokeAll(tasks);
-            String[] results = new String[contents.length];
-            for (int i = 0; i < futures.size(); i++) {
-                results[i] = futures.get(i).get();
+            String[] translated = model.translateBatch(sourceLang, targetLang,
+                    uncachedContents.toArray(new String[0]));
+            for (int i = 0; i < translated.length; i++) {
+                int originalIndex = uncachedIndexes.get(i);
+                String normalized = uncachedContents.get(i);
+                String translatedText = translated[i];
+                results[originalIndex] = translatedText;
+                cache.put(sourceLang, targetLang, normalized, translatedText);
             }
             return results;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Batch translation interrupted", e);
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause() == null ? e : e.getCause();
-            throw new RuntimeException("Batch translation failed: " + cause.getMessage(), cause);
+        } catch (Exception e) {
+            logger.error("Batch translation failed", e);
+            throw new RuntimeException("Batch translation failed: " + e.getMessage(), e);
         }
     }
 
@@ -274,8 +317,12 @@ public class Translator {
     }
 
     public static String getVersion() {
-            return VERSION;
-        }
+        return BuildInfo.getVersion();
+    }
+
+    public static String getBuildInfo() {
+        return BuildInfo.getBuildInfo();
+    }
 
     public static class CacheStatistics {
         public final int totalEntries;

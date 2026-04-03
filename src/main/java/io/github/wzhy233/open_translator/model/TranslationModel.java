@@ -2,6 +2,7 @@ package io.github.wzhy233.open_translator.model;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import io.github.wzhy233.open_translator.BuildInfo;
 import io.github.wzhy233.open_translator.setup.RuntimeSetupManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TranslationModel implements AutoCloseable {
@@ -39,20 +41,20 @@ public class TranslationModel implements AutoCloseable {
     private static final String DEVICE_PROP = "open_translator.device";
     private static final String DEVICE_ENV = "OPEN_TRANSLATOR_DEVICE";
     private static final String INTRA_THREADS_PROP = "open_translator.intra_threads";
+    private static final String WORKER_COUNT_PROP = "open_translator.worker_count";
+    private static final String MAX_BATCH_SIZE_PROP = "open_translator.max_batch_size";
     private static final int DEFAULT_INTRA_THREADS = 4;
+    private static final int DEFAULT_MAX_BATCH_SIZE = 8;
 
-    private final Object ioLock = new Object();
     private final Set<String> supportedPairs = ConcurrentHashMap.newKeySet();
-    private Process workerProcess;
-    private BufferedWriter workerInput;
-    private BufferedReader workerOutput;
-    private Thread stderrThread;
+    private final List<WorkerSession> workers = new ArrayList<>();
+    private final AtomicInteger nextWorkerIndex = new AtomicInteger();
     private Path extractedWorkerScript;
 
     public void initialize() {
         try {
-            RuntimeSetupManager.ensureReady(true);
-            startWorker();
+            RuntimeSetupManager.ensureReady(!BuildInfo.isSilentBuild());
+            startWorkers();
             List<String> pairs = fetchSupportedPairs();
             supportedPairs.clear();
             supportedPairs.addAll(pairs);
@@ -71,37 +73,40 @@ public class TranslationModel implements AutoCloseable {
         request.put("cmd", "translate");
         request.put("pair", sourceLang + "_" + targetLang);
         request.put("text", content);
-        Map<String, Object> response = sendRequest(request);
+        Map<String, Object> response = borrowWorker().sendRequest(request);
         Object translated = response.get("text");
         return translated == null ? "" : translated.toString();
     }
 
+    public String[] translateBatch(String sourceLang, String targetLang, String[] contents) {
+        if (contents == null || contents.length == 0) {
+            return new String[0];
+        }
+        Map<String, Object> request = new LinkedHashMap<>();
+        request.put("cmd", "translate_batch");
+        request.put("pair", sourceLang + "_" + targetLang);
+        request.put("texts", contents);
+        request.put("max_batch_size", readIntProp(MAX_BATCH_SIZE_PROP, DEFAULT_MAX_BATCH_SIZE));
+        Map<String, Object> response = borrowWorker().sendRequest(request);
+        Object texts = response.get("texts");
+        if (!(texts instanceof List<?>)) {
+            throw new IllegalStateException("Translation worker returned invalid batch response");
+        }
+        List<?> rawTexts = (List<?>) texts;
+        String[] translated = new String[rawTexts.size()];
+        for (int i = 0; i < rawTexts.size(); i++) {
+            Object value = rawTexts.get(i);
+            translated[i] = value == null ? "" : value.toString();
+        }
+        return translated;
+    }
+
     @Override
     public void close() {
-        try {
-            if (workerInput != null) {
-                Map<String, Object> request = new HashMap<>();
-                request.put("cmd", "shutdown");
-                sendRequest(request);
-            }
-        } catch (Exception ignored) {
+        for (WorkerSession worker : workers) {
+            worker.close();
         }
-
-        if (workerProcess != null) {
-            workerProcess.destroy();
-            try {
-                workerProcess.waitFor();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            workerProcess = null;
-        }
-        if (stderrThread != null) {
-            stderrThread.interrupt();
-            stderrThread = null;
-        }
-        workerInput = null;
-        workerOutput = null;
+        workers.clear();
 
         if (extractedWorkerScript != null) {
             try {
@@ -112,7 +117,19 @@ public class TranslationModel implements AutoCloseable {
         }
     }
 
-    private void startWorker() throws IOException {
+    public static int defaultWorkerCount() {
+        int cpuCount = Runtime.getRuntime().availableProcessors();
+        int recommended = Math.max(1, Math.min(4, cpuCount / 2));
+        return readIntProp(WORKER_COUNT_PROP, recommended);
+    }
+
+    private void startWorkers() throws IOException {
+        for (int i = 0; i < defaultWorkerCount(); i++) {
+            workers.add(startWorker(i));
+        }
+    }
+
+    private WorkerSession startWorker(int index) throws IOException {
         List<String> command = new ArrayList<>();
         command.add(resolvePythonExecutable());
         command.add("-u");
@@ -130,18 +147,19 @@ public class TranslationModel implements AutoCloseable {
         builder.redirectErrorStream(false);
         builder.environment().put("PYTHONIOENCODING", "UTF-8");
         builder.environment().put("PYTHONUTF8", "1");
-        workerProcess = builder.start();
-        workerInput = new BufferedWriter(new OutputStreamWriter(workerProcess.getOutputStream(), StandardCharsets.UTF_8));
-        workerOutput = new BufferedReader(new InputStreamReader(workerProcess.getInputStream(), StandardCharsets.UTF_8));
-        stderrThread = new Thread(() -> streamWorkerStderr(workerProcess), "ctranslate2-worker-stderr");
+        Process workerProcess = builder.start();
+        BufferedWriter workerInput = new BufferedWriter(new OutputStreamWriter(workerProcess.getOutputStream(), StandardCharsets.UTF_8));
+        BufferedReader workerOutput = new BufferedReader(new InputStreamReader(workerProcess.getInputStream(), StandardCharsets.UTF_8));
+        Thread stderrThread = new Thread(() -> streamWorkerStderr(workerProcess), "ctranslate2-worker-stderr-" + index);
         stderrThread.setDaemon(true);
         stderrThread.start();
+        return new WorkerSession(workerProcess, workerInput, workerOutput, stderrThread);
     }
 
     private List<String> fetchSupportedPairs() {
         Map<String, Object> request = new HashMap<>();
         request.put("cmd", "list_supported_pairs");
-        Map<String, Object> response = sendRequest(request);
+        Map<String, Object> response = borrowWorker().sendRequest(request);
         Object pairsObj = response.get("pairs");
         if (!(pairsObj instanceof List<?>)) {
             return Collections.emptyList();
@@ -156,41 +174,6 @@ public class TranslationModel implements AutoCloseable {
         return pairs;
     }
 
-    private Map<String, Object> sendRequest(Map<String, Object> request) {
-        synchronized (ioLock) {
-            ensureWorkerRunning();
-            try {
-                workerInput.write(GSON.toJson(request));
-                workerInput.newLine();
-                workerInput.flush();
-
-                String line = workerOutput.readLine();
-                if (line == null) {
-                    throw new IllegalStateException("Translation worker terminated unexpectedly");
-                }
-
-                Map<String, Object> response = GSON.fromJson(line, MAP_TYPE);
-                if (response == null) {
-                    throw new IllegalStateException("Translation worker returned empty response");
-                }
-                Object ok = response.get("ok");
-                if (!(ok instanceof Boolean) || !((Boolean) ok)) {
-                    Object message = response.get("error");
-                    throw new IllegalStateException(message == null ? "Translation worker failed" : message.toString());
-                }
-                return response;
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to communicate with translation worker", e);
-            }
-        }
-    }
-
-    private void ensureWorkerRunning() {
-        if (workerProcess == null || !workerProcess.isAlive()) {
-            throw new IllegalStateException("Translation worker is not running");
-        }
-    }
-
     private void streamWorkerStderr(Process process) {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
@@ -201,6 +184,16 @@ public class TranslationModel implements AutoCloseable {
         } catch (IOException e) {
             logger.debug("Translation worker stderr closed", e);
         }
+    }
+
+    private WorkerSession borrowWorker() {
+        if (workers.isEmpty()) {
+            throw new IllegalStateException("Translation worker pool is empty");
+        }
+        int index = Math.abs(nextWorkerIndex.getAndIncrement());
+        WorkerSession worker = workers.get(index % workers.size());
+        worker.ensureWorkerRunning();
+        return worker;
     }
 
     private Path resolveWorkerScript() throws IOException {
@@ -253,6 +246,73 @@ public class TranslationModel implements AutoCloseable {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
             return defaultValue;
+        }
+    }
+
+    private static final class WorkerSession {
+        private final Object ioLock = new Object();
+        private final Process workerProcess;
+        private final BufferedWriter workerInput;
+        private final BufferedReader workerOutput;
+        private final Thread stderrThread;
+
+        private WorkerSession(Process workerProcess, BufferedWriter workerInput,
+                              BufferedReader workerOutput, Thread stderrThread) {
+            this.workerProcess = workerProcess;
+            this.workerInput = workerInput;
+            this.workerOutput = workerOutput;
+            this.stderrThread = stderrThread;
+        }
+
+        private Map<String, Object> sendRequest(Map<String, Object> request) {
+            synchronized (ioLock) {
+                ensureWorkerRunning();
+                try {
+                    workerInput.write(GSON.toJson(request));
+                    workerInput.newLine();
+                    workerInput.flush();
+
+                    String line = workerOutput.readLine();
+                    if (line == null) {
+                        throw new IllegalStateException("Translation worker terminated unexpectedly");
+                    }
+
+                    Map<String, Object> response = GSON.fromJson(line, MAP_TYPE);
+                    if (response == null) {
+                        throw new IllegalStateException("Translation worker returned empty response");
+                    }
+                    Object ok = response.get("ok");
+                    if (!(ok instanceof Boolean) || !((Boolean) ok)) {
+                        Object message = response.get("error");
+                        throw new IllegalStateException(message == null ? "Translation worker failed" : message.toString());
+                    }
+                    return response;
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to communicate with translation worker", e);
+                }
+            }
+        }
+
+        private void ensureWorkerRunning() {
+            if (workerProcess == null || !workerProcess.isAlive()) {
+                throw new IllegalStateException("Translation worker is not running");
+            }
+        }
+
+        private void close() {
+            try {
+                Map<String, Object> request = new HashMap<>();
+                request.put("cmd", "shutdown");
+                sendRequest(request);
+            } catch (Exception ignored) {
+            }
+            workerProcess.destroy();
+            try {
+                workerProcess.waitFor();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            stderrThread.interrupt();
         }
     }
 }

@@ -9,7 +9,9 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 final class TestSetup {
@@ -24,7 +26,7 @@ final class TestSetup {
         previousModelRoot = System.getProperty("open_translator.model_root");
 
         String python = detectPython();
-        Path modelRoot = Path.of(System.getProperty("user.home"), ".open_translator",
+        Path modelRoot = Paths.get(System.getProperty("user.home"), ".open_translator",
                 "OpenTranslatorLite", "models", "ctranslate2");
 
         ConfigManager.setPythonPath(python);
@@ -37,10 +39,10 @@ final class TestSetup {
             RuntimeSetupManager.ensureReady(true);
         } else {
             System.setProperty("open_translator.ui.enabled", "false");
-            runCommand(List.of(python, "-m", "pip", "install", "-r", "scripts/requirements.txt"));
+            runCommand(Arrays.asList(python, "-m", "pip", "install", "-r", "scripts/requirements.txt"));
             if (!Files.exists(modelRoot.resolve("en_zh").resolve("model.bin"))
                     || !Files.exists(modelRoot.resolve("zh_en").resolve("model.bin"))) {
-                runCommand(List.of(python, "scripts/init_models.py", "--model-root", modelRoot.toString()));
+                runCommand(Arrays.asList(python, "scripts/init_models.py", "--model-root", modelRoot.toString()));
             }
             ConfigManager.acceptLicense("TranslatorTest");
         }
@@ -53,7 +55,7 @@ final class TestSetup {
     }
 
     private static String detectPython() {
-        Path localVenv = Path.of("scripts", ".venv", "Scripts", "python.exe").toAbsolutePath();
+        Path localVenv = Paths.get("scripts", ".venv", "Scripts", "python.exe").toAbsolutePath();
         if (Files.exists(localVenv)) {
             return localVenv.toString();
         }

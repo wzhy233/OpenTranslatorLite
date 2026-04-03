@@ -12,7 +12,9 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -72,14 +74,14 @@ public final class RuntimeSetupManager {
 
     public static void installDependencies(String pythonPath, Consumer<String> loggerConsumer) {
         Path requirements = extractBundledResource("/python/requirements.txt", "requirements", ".txt");
-        runCommand(loggerConsumer, List.of(
+        runCommand(loggerConsumer, Arrays.asList(
                 pythonPath, "-m", "pip", "install", "-r", requirements.toString()
         ));
     }
 
     public static void downloadModels(String pythonPath, Path modelRoot, Consumer<String> loggerConsumer) {
         Path script = extractBundledResource("/python/ctranslate2_model_setup.py", "model-setup", ".py");
-        runCommand(loggerConsumer, List.of(
+        runCommand(loggerConsumer, Arrays.asList(
                 pythonPath, script.toString(), "--model-root", modelRoot.toString()
         ));
     }
@@ -103,14 +105,14 @@ public final class RuntimeSetupManager {
 
     private static String resolvePythonExecutable() {
         String configured = System.getProperty(PYTHON_PROP);
-        if (configured != null && !configured.isBlank()) {
+        if (configured != null && !configured.trim().isEmpty()) {
             return configured;
         }
         configured = ConfigManager.getPythonPath();
-        if (configured != null && !configured.isBlank()) {
+        if (configured != null && !configured.trim().isEmpty()) {
             return configured;
         }
-        Path localVenv = Path.of("scripts", ".venv", "Scripts", "python.exe");
+        Path localVenv = Paths.get("scripts", ".venv", "Scripts", "python.exe");
         if (Files.exists(localVenv)) {
             return localVenv.toAbsolutePath().toString();
         }
@@ -119,11 +121,11 @@ public final class RuntimeSetupManager {
 
     private static Path resolveModelRoot() {
         String configured = System.getProperty(MODEL_ROOT_PROP);
-        if (configured != null && !configured.isBlank()) {
-            return Path.of(configured);
+        if (configured != null && !configured.trim().isEmpty()) {
+            return Paths.get(configured);
         }
         configured = ConfigManager.getModelRoot();
-        return Path.of(configured);
+        return Paths.get(configured);
     }
 
     private static boolean canRunPython(String pythonPath) {

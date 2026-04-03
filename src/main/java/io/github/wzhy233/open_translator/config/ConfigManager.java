@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -44,7 +45,7 @@ public class ConfigManager {
     public static void initConfig() {
         try {
             ensureConfigDir();
-            Path configPath = Path.of(CONFIG_FILE);
+            Path configPath = Paths.get(CONFIG_FILE);
             if (!Files.exists(configPath)) {
                 Properties props = defaultProperties();
                 storeProperties(props);
@@ -84,7 +85,7 @@ public class ConfigManager {
     }
 
     public static void setUiTheme(String theme) {
-        updateProperty(UI_THEME_KEY, (theme == null || theme.isBlank()) ? "dark" : theme.trim());
+        updateProperty(UI_THEME_KEY, (theme == null || theme.trim().isEmpty()) ? "dark" : theme.trim());
     }
 
     public static boolean isLicenseAccepted() {
@@ -252,7 +253,7 @@ public class ConfigManager {
     }
 
     private static void ensureConfigDir() throws IOException {
-        Files.createDirectories(Path.of(CONFIG_DIR));
+        Files.createDirectories(Paths.get(CONFIG_DIR));
     }
 
     private static void storeProperties(Properties props) throws IOException {

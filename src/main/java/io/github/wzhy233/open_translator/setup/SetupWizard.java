@@ -48,6 +48,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -318,7 +319,7 @@ public class SetupWizard {
         downloadModels.addActionListener(e -> runAsyncSetup("Downloading models",
                 () -> RuntimeSetupManager.downloadModels(
                         pythonField.getText().trim(),
-                        Path.of(modelRootField.getText().trim()),
+                        Paths.get(modelRootField.getText().trim()),
                         this::appendLog)));
         actions.add(saveButton);
         actions.add(installDeps);
@@ -352,7 +353,7 @@ public class SetupWizard {
 
         JButton openConfig = new JButton("Open Config Folder");
         openConfig.setAlignmentX(Component.LEFT_ALIGNMENT);
-        openConfig.addActionListener(e -> openLink(Path.of(ConfigManager.getConfigFilePath()).getParent().toUri().toString()));
+        openConfig.addActionListener(e -> openLink(Paths.get(ConfigManager.getConfigFilePath()).getParent().toUri().toString()));
         panel.add(openConfig);
         panel.add(Box.createVerticalGlue());
         return panel;
@@ -467,7 +468,7 @@ public class SetupWizard {
     }
 
     private void savePaths() {
-        RuntimeSetupManager.savePaths(pythonField.getText().trim(), Path.of(modelRootField.getText().trim()));
+        RuntimeSetupManager.savePaths(pythonField.getText().trim(), Paths.get(modelRootField.getText().trim()));
         refreshStatus();
     }
 
@@ -615,7 +616,9 @@ public class SetupWizard {
             if (input == null) {
                 return "Missing resource: " + resourcePath;
             }
-            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+            byte[] bytes = new byte[input.available()];
+            input.read(bytes);
+            return new String(bytes, StandardCharsets.UTF_8);
         } catch (IOException e) {
             return "Failed to load resource: " + resourcePath;
         }

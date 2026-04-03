@@ -71,7 +71,7 @@ public class CacheManager {
                 Path file = Paths.get(cachePath, entry.fileName);
                 if (Files.exists(file)) {
                     try {
-                        String result = Files.readString(file, StandardCharsets.UTF_8);
+                        String result = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
                         memoryCache.put(key, result);
                         hits.increment();
                         return result;
@@ -100,7 +100,7 @@ public class CacheManager {
             Path filePath = Paths.get(cachePath, fileName);
 
             try {
-                Files.writeString(filePath, result, StandardCharsets.UTF_8);
+                Files.write(filePath, result.getBytes(StandardCharsets.UTF_8));
                 CacheEntry entry = new CacheEntry(sourceLang, targetLang, fileName);
                 cacheIndex.put(key, entry);
                 memoryCache.put(key, result);
@@ -138,7 +138,7 @@ public class CacheManager {
 
         if (indexFile.exists()) {
             try {
-                String json = Files.readString(Paths.get(indexPath), StandardCharsets.UTF_8);
+                String json = new String(Files.readAllBytes(Paths.get(indexPath)), StandardCharsets.UTF_8);
                 Map<String, CacheEntry> loaded = gson.fromJson(json,
                         new TypeToken<Map<String, CacheEntry>>(){}.getType());
                 if (loaded != null) {
@@ -154,7 +154,7 @@ public class CacheManager {
         try {
             String indexPath = cachePath + File.separator + INDEX_FILE;
             String json = gson.toJson(cacheIndex);
-            Files.writeString(Paths.get(indexPath), json, StandardCharsets.UTF_8);
+            Files.write(Paths.get(indexPath), json.getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             logger.error("Failed to save cache index", e);
         }

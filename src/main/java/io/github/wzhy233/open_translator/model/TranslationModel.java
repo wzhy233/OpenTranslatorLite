@@ -16,6 +16,7 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -204,8 +205,8 @@ public class TranslationModel implements AutoCloseable {
 
     private Path resolveWorkerScript() throws IOException {
         String configured = readSetting(WORKER_PROP, WORKER_ENV, null);
-        if (configured != null && !configured.isBlank()) {
-            return Path.of(configured);
+        if (configured != null && !configured.trim().isEmpty()) {
+            return Paths.get(configured);
         }
 
         if (extractedWorkerScript != null && Files.exists(extractedWorkerScript)) {
@@ -225,7 +226,7 @@ public class TranslationModel implements AutoCloseable {
 
     private String resolvePythonExecutable() {
         String configured = readSetting(PYTHON_PROP, PYTHON_ENV, null);
-        if (configured != null && !configured.isBlank()) {
+        if (configured != null && !configured.trim().isEmpty()) {
             return configured;
         }
         return RuntimeSetupManager.inspect().pythonPath;
@@ -233,11 +234,11 @@ public class TranslationModel implements AutoCloseable {
 
     private static String readSetting(String propName, String envName, String defaultValue) {
         String propValue = System.getProperty(propName);
-        if (propValue != null && !propValue.isBlank()) {
+        if (propValue != null && !propValue.trim().isEmpty()) {
             return propValue;
         }
         String envValue = System.getenv(envName);
-        if (envValue != null && !envValue.isBlank()) {
+        if (envValue != null && !envValue.trim().isEmpty()) {
             return envValue;
         }
         return defaultValue;

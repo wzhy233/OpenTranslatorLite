@@ -6,10 +6,7 @@ import io.github.wzhy233.open_translator.model.TranslationModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -73,7 +70,7 @@ public class Translator {
             printBanner();
             cache.initialize();
             model.initialize();
-            supportedPairs = Set.copyOf(model.getSupportedPairs());
+            supportedPairs = new HashSet<>(model.getSupportedPairs());
             isInitialized.set(true);
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize", e);

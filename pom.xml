@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.wzhy233</groupId>
@@ -12,6 +13,27 @@
     <name>OpenTranslatorLite</name>
     <description>Lightweight offline neural network translation library with configurable persistent cache</description>
     <url>https://github.com/wzhy233/OpenTranslatorLite</url>
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>wzhy233</id>
+            <name>wzhy233</name>
+            <url>https://github.com/wzhy233</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/wzhy233/OpenTranslatorLite.git</connection>
+        <developerConnection>scm:git:ssh://github.com/wzhy233/OpenTranslatorLite.git</developerConnection>
+        <url>https://github.com/wzhy233/OpenTranslatorLite</url>
+    </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -28,19 +50,16 @@
             <artifactId>gson</artifactId>
             <version>2.10.1</version>
         </dependency>
-
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>1.7.36</version>
         </dependency>
-
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.2.11</version>
         </dependency>
-
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -51,6 +70,7 @@
 
     <build>
         <finalName>${translator.finalName}</finalName>
+
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -117,27 +137,14 @@
                                         </not>
                                     </and>
                                 </condition>
-                                <condition property="translator.git.remoteBranch.resolved" value="${translator.git.remoteBranch}" else="${translator.git.branch.resolved}">
-                                    <and>
-                                        <isset property="translator.git.remoteBranch"/>
-                                        <not>
-                                            <equals arg1="${translator.git.remoteBranch}" arg2="" trim="true"/>
-                                        </not>
-                                    </and>
-                                </condition>
-                                <condition property="translator.git.commit.resolved" value="${translator.git.commit}" else="unknown">
-                                    <and>
-                                        <isset property="translator.git.commit"/>
-                                        <not>
-                                            <equals arg1="${translator.git.commit}" arg2="" trim="true"/>
-                                        </not>
-                                    </and>
-                                </condition>
+                                <condition property="translator.git.remoteBranch.resolved" value="${translator.git.remoteBranch}" else="${translator.git.branch.resolved}"/>
+                                <condition property="translator.git.commit.resolved" value="${translator.git.commit}" else="unknown"/>
                                 <mkdir dir="${project.build.directory}"/>
-                                <echo file="${project.build.directory}/generated-git.properties">translator.git.branch=${translator.git.branch.resolved}
-translator.git.remoteBranch=${translator.git.remoteBranch.resolved}
-translator.git.commit=${translator.git.commit.resolved}
-</echo>
+                                <echo file="${project.build.directory}/generated-git.properties">
+                                    translator.git.branch=${translator.git.branch.resolved}
+                                    translator.git.remoteBranch=${translator.git.remoteBranch.resolved}
+                                    translator.git.commit=${translator.git.commit.resolved}
+                                </echo>
                             </target>
                         </configuration>
                         <goals>
@@ -174,7 +181,6 @@ translator.git.commit=${translator.git.commit.resolved}
                     <propertiesEncoding>UTF-8</propertiesEncoding>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -209,6 +215,44 @@ translator.git.commit=${translator.git.commit.resolved}
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.5.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -221,7 +265,6 @@ translator.git.commit=${translator.git.commit.resolved}
                     <artifactId>flatlaf</artifactId>
                     <version>3.5.4</version>
                 </dependency>
-
                 <dependency>
                     <groupId>com.vladsch.flexmark</groupId>
                     <artifactId>flexmark-all</artifactId>

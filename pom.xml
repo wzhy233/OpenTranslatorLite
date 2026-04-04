@@ -113,6 +113,7 @@
                         <phase>initialize</phase>
                         <configuration>
                             <target>
+                                <property environment="env"/>
                                 <exec executable="git" outputproperty="translator.git.branch" failifexecutionfails="false" failonerror="false">
                                     <arg value="rev-parse"/>
                                     <arg value="--abbrev-ref"/>
@@ -129,24 +130,61 @@
                                     <arg value="--short"/>
                                     <arg value="HEAD"/>
                                 </exec>
-                                <condition property="translator.git.branch.resolved" value="${translator.git.branch}" else="unknown">
+                                <condition property="translator.git.branch.resolved" value="${env.GITHUB_REF_NAME}" else="${translator.git.branch}">
                                     <and>
-                                        <isset property="translator.git.branch"/>
+                                        <isset property="env.GITHUB_ACTIONS"/>
                                         <not>
-                                            <equals arg1="${translator.git.branch}" arg2="" trim="true"/>
+                                            <equals arg1="${env.GITHUB_REF_NAME}" arg2="" trim="true"/>
                                         </not>
                                     </and>
                                 </condition>
-                                <condition property="translator.git.remoteBranch.resolved" value="${translator.git.remoteBranch}" else="${translator.git.branch.resolved}">
+                                <condition property="translator.git.branch.resolved" value="detached" else="${translator.git.branch.resolved}">
                                     <and>
-                                        <isset property="translator.git.remoteBranch"/>
+                                        <isset property="translator.git.branch.resolved"/>
                                         <not>
-                                            <equals arg1="${translator.git.remoteBranch}" arg2="" trim="true"/>
+                                            <equals arg1="${translator.git.branch.resolved}" arg2="" trim="true"/>
+                                        </not>
+                                        <equals arg1="${translator.git.branch.resolved}" arg2="HEAD" trim="true"/>
+                                    </and>
+                                </condition>
+                                <condition property="translator.git.branch.resolved" value="unknown" else="${translator.git.branch.resolved}">
+                                    <or>
+                                        <not>
+                                            <isset property="translator.git.branch.resolved"/>
+                                        </not>
+                                        <equals arg1="${translator.git.branch.resolved}" arg2="" trim="true"/>
+                                    </or>
+                                </condition>
+                                <condition property="translator.git.remoteBranch.resolved" value="${env.GITHUB_REF_NAME}" else="${translator.git.remoteBranch}">
+                                    <and>
+                                        <isset property="env.GITHUB_ACTIONS"/>
+                                        <not>
+                                            <equals arg1="${env.GITHUB_REF_NAME}" arg2="" trim="true"/>
+                                        </not>
+                                    </and>
+                                </condition>
+                                <condition property="translator.git.remoteBranch.resolved" value="${translator.git.branch.resolved}" else="${translator.git.remoteBranch.resolved}">
+                                    <or>
+                                        <not>
+                                            <isset property="translator.git.remoteBranch.resolved"/>
+                                        </not>
+                                        <equals arg1="${translator.git.remoteBranch.resolved}" arg2="" trim="true"/>
+                                        <contains string="${translator.git.remoteBranch.resolved}" substring="fatal:"/>
+                                    </or>
+                                </condition>
+                                <condition property="translator.git.commit.resolved" value="${env.GITHUB_SHA}" else="${translator.git.commit}">
+                                    <and>
+                                        <isset property="env.GITHUB_SHA"/>
+                                        <not>
+                                            <equals arg1="${env.GITHUB_SHA}" arg2="" trim="true"/>
                                         </not>
                                     </and>
                                 </condition>
                                 <condition property="translator.git.commit.resolved" value="${translator.git.commit}" else="unknown">
                                     <and>
+                                        <not>
+                                            <isset property="translator.git.commit.resolved"/>
+                                        </not>
                                         <isset property="translator.git.commit"/>
                                         <not>
                                             <equals arg1="${translator.git.commit}" arg2="" trim="true"/>

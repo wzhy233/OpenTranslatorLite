@@ -38,14 +38,6 @@ pip install -r scripts/requirements.txt
 python scripts/init_models.py
 ```
 
-## Embedded Use
-
-If another developer distributes an application that uses this library, the end user still needs:
-
-- Python available on the machine
-- The required Python packages
-- Downloaded model files
-- Accepted license state
 
 The setup wizard is intended to guide that first-run experience automatically.
 

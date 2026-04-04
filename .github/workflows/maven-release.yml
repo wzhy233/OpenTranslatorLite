@@ -24,11 +24,13 @@ jobs:
           echo "${{ secrets.MAVEN_GPG_PRIVATE_KEY }}" | gpg --batch --import
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
 
-      - name: Deploy to Maven Central
+      - name: Deploy SILENT
         run: |
-          mvn clean deploy -B \
-            -DskipTests \
-            -Dgpg.passphrase="${{ secrets.MAVEN_GPG_PASSPHRASE }}"
+          mvn clean deploy -B -DskipTests -Dgpg.passphrase="${{ secrets.MAVEN_GPG_PASSPHRASE }}"
+
+      - name: Deploy FULL
+        run: |
+          mvn clean deploy -B -DskipTests -Pfull-build -Dgpg.passphrase="${{ secrets.MAVEN_GPG_PASSPHRASE }}"
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}

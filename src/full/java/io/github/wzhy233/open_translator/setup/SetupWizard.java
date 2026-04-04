@@ -5,6 +5,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import io.github.wzhy233.open_translator.config.ConfigManager;
+import io.github.wzhy233.open_translator.runtime.RuntimeManager;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -254,7 +255,7 @@ public class SetupWizard {
                 JOptionPane.showMessageDialog(dialog, "Signer name is required.");
                 return;
             }
-            RuntimeSetupManager.acceptLicense(signer);
+            RuntimeManager.acceptLicense(signer);
             appendLog("License saved for this device.");
             refreshStatus();
             if (currentStatus.isReady()) {
@@ -314,10 +315,10 @@ public class SetupWizard {
         });
         JButton installDeps = new JButton("Install Dependencies");
         installDeps.addActionListener(e -> runAsyncSetup("Installing Python dependencies",
-                () -> RuntimeSetupManager.installDependencies(pythonField.getText().trim(), this::appendLog)));
+                () -> RuntimeManager.installDependencies(pythonField.getText().trim(), this::appendLog)));
         JButton downloadModels = new JButton("Download Models");
         downloadModels.addActionListener(e -> runAsyncSetup("Downloading models",
-                () -> RuntimeSetupManager.downloadModels(
+                () -> RuntimeManager.downloadModels(
                         pythonField.getText().trim(),
                         Paths.get(modelRootField.getText().trim()),
                         this::appendLog)));
@@ -432,7 +433,7 @@ public class SetupWizard {
     }
 
     private void refreshStatus() {
-        applyStatus(RuntimeSetupManager.inspect());
+        applyStatus(RuntimeManager.inspect());
     }
 
     private void applyStatus(SetupStatus status) {
@@ -468,7 +469,7 @@ public class SetupWizard {
     }
 
     private void savePaths() {
-        RuntimeSetupManager.savePaths(pythonField.getText().trim(), Paths.get(modelRootField.getText().trim()));
+        RuntimeManager.savePaths(pythonField.getText().trim(), Paths.get(modelRootField.getText().trim()));
         refreshStatus();
     }
 

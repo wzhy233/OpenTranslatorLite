@@ -21,7 +21,9 @@ jobs:
 
       - name: Import GPG Key
         run: |
-          echo "${{ secrets.MAVEN_GPG_PRIVATE_KEY }}" | gpg --batch --import
+          gpg --batch --import <<- EOF
+          ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          EOF
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
 
       - name: Deploy SILENT

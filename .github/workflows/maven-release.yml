@@ -26,18 +26,9 @@ jobs:
           EOF
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
 
-      - name: Deploy SILENT (DEBUG MODE)
+      - name: Deploy to Maven Central
         run: |
-          mvn clean deploy -X -e -B -DskipTests -Dgpg.passphrase="${{ secrets.MAVEN_GPG_PASSPHRASE }}"
+          mvn clean deploy -B -DskipTests -Dgpg.passphrase="${{ secrets.MAVEN_GPG_PASSPHRASE }}"
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
-
-      - name: Deploy FULL (DEBUG MODE)
-        run: |
-          mvn clean deploy -X -e -B -DskipTests -Pfull-build -Dgpg.passphrase="${{ secrets.MAVEN_GPG_PASSPHRASE }}"
-        env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}

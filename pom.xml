@@ -1,365 +1,365 @@
-    <?xml version="1.0" encoding="UTF-8"?>
-    <project xmlns="http://maven.apache.org/POM/4.0.0"
-             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-                                 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-        <modelVersion>4.0.0</modelVersion>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-        <groupId>io.github.wzhy233</groupId>
-        <artifactId>open-translator-lite</artifactId>
-        <version>1.0.2</version>
-        <packaging>jar</packaging>
+    <groupId>io.github.wzhy233</groupId>
+    <artifactId>open-translator-lite</artifactId>
+    <version>1.0.2</version>
+    <packaging>jar</packaging>
 
-        <name>OpenTranslatorLite</name>
-        <description>Lightweight offline neural network translation library with configurable persistent cache</description>
+    <name>OpenTranslatorLite</name>
+    <description>Lightweight offline neural network translation library with configurable persistent cache</description>
+    <url>https://github.com/wzhy233/OpenTranslatorLite</url>
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>wzhy233</id>
+            <name>wzhy233</name>
+            <url>https://github.com/wzhy233</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/wzhy233/OpenTranslatorLite.git</connection>
+        <developerConnection>scm:git:ssh://github.com/wzhy233/OpenTranslatorLite.git</developerConnection>
         <url>https://github.com/wzhy233/OpenTranslatorLite</url>
-        <licenses>
-            <license>
-                <name>MIT License</name>
-                <url>https://opensource.org/licenses/MIT</url>
-                <distribution>repo</distribution>
-            </license>
-        </licenses>
+    </scm>
 
-        <developers>
-            <developer>
-                <id>wzhy233</id>
-                <name>wzhy233</name>
-                <url>https://github.com/wzhy233</url>
-            </developer>
-        </developers>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.build.resourcesEncoding>UTF-8</project.build.resourcesEncoding>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <translator.build.variant>full</translator.build.variant>
+        <translator.finalName>${project.artifactId}-${project.version}</translator.finalName>
+        <maven.deploy.classifier/>
+    </properties>
 
-        <scm>
-            <connection>scm:git:git://github.com/wzhy233/OpenTranslatorLite.git</connection>
-            <developerConnection>scm:git:ssh://github.com/wzhy233/OpenTranslatorLite.git</developerConnection>
-            <url>https://github.com/wzhy233/OpenTranslatorLite</url>
-        </scm>
+    <dependencies>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.11</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
-        <properties>
-            <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-            <project.build.resourcesEncoding>UTF-8</project.build.resourcesEncoding>
-            <maven.compiler.source>8</maven.compiler.source>
-            <maven.compiler.target>8</maven.compiler.target>
-            <translator.build.variant>full</translator.build.variant>
-            <translator.finalName>${project.artifactId}-${project.version}</translator.finalName>
-            <maven.deploy.classifier/>
-        </properties>
+    <build>
+        <finalName>${translator.finalName}</finalName>
 
-        <dependencies>
-            <dependency>
-                <groupId>com.google.code.gson</groupId>
-                <artifactId>gson</artifactId>
-                <version>2.10.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>1.7.36</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>1.2.11</version>
-            </dependency>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>4.13.2</version>
-                <scope>test</scope>
-            </dependency>
-        </dependencies>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*.xml</include>
+                    <include>**/*.py</include>
+                    <include>**/*.txt</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>open-translator-build.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${project.basedir}</directory>
+                <includes>
+                    <include>LICENSE.txt</include>
+                    <include>README.md</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${project.basedir}/docs</directory>
+                <targetPath>docs</targetPath>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+        </resources>
 
-        <build>
-            <finalName>${translator.finalName}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <configuration>
+                            <target>
+                                <exec executable="git" outputproperty="translator.git.branch" failifexecutionfails="false" failonerror="false">
+                                    <arg value="rev-parse"/>
+                                    <arg value="--abbrev-ref"/>
+                                    <arg value="HEAD"/>
+                                </exec>
+                                <exec executable="git" outputproperty="translator.git.remoteBranch" failifexecutionfails="false" failonerror="false">
+                                    <arg value="rev-parse"/>
+                                    <arg value="--abbrev-ref"/>
+                                    <arg value="--symbolic-full-name"/>
+                                    <arg value="@{u}"/>
+                                </exec>
+                                <exec executable="git" outputproperty="translator.git.commit" failifexecutionfails="false" failonerror="false">
+                                    <arg value="rev-parse"/>
+                                    <arg value="--short"/>
+                                    <arg value="HEAD"/>
+                                </exec>
+                                <condition property="translator.git.branch.resolved" value="${translator.git.branch}" else="unknown">
+                                    <and>
+                                        <isset property="translator.git.branch"/>
+                                        <not>
+                                            <equals arg1="${translator.git.branch}" arg2="" trim="true"/>
+                                        </not>
+                                    </and>
+                                </condition>
+                                <condition property="translator.git.remoteBranch.resolved" value="${translator.git.remoteBranch}" else="${translator.git.branch.resolved}">
+                                    <and>
+                                        <isset property="translator.git.remoteBranch"/>
+                                        <not>
+                                            <equals arg1="${translator.git.remoteBranch}" arg2="" trim="true"/>
+                                        </not>
+                                    </and>
+                                </condition>
+                                <condition property="translator.git.commit.resolved" value="${translator.git.commit}" else="unknown">
+                                    <and>
+                                        <isset property="translator.git.commit"/>
+                                        <not>
+                                            <equals arg1="${translator.git.commit}" arg2="" trim="true"/>
+                                        </not>
+                                    </and>
+                                </condition>
+                                <mkdir dir="${project.build.directory}"/>
+                                <echo file="${project.build.directory}/generated-git.properties">
+                                    translator.git.branch=${translator.git.branch.resolved}
+                                    translator.git.remoteBranch=${translator.git.remoteBranch.resolved}
+                                    translator.git.commit=${translator.git.commit.resolved}
+                                </echo>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
-            <resources>
-                <resource>
-                    <directory>src/main/resources</directory>
-                    <includes>
-                        <include>**/*.xml</include>
-                        <include>**/*.py</include>
-                        <include>**/*.txt</include>
-                    </includes>
-                </resource>
-                <resource>
-                    <directory>src/main/resources</directory>
-                    <filtering>true</filtering>
-                    <includes>
-                        <include>open-translator-build.properties</include>
-                    </includes>
-                </resource>
-                <resource>
-                    <directory>${project.basedir}</directory>
-                    <includes>
-                        <include>LICENSE.txt</include>
-                        <include>README.md</include>
-                    </includes>
-                </resource>
-                <resource>
-                    <directory>${project.basedir}/docs</directory>
-                    <targetPath>docs</targetPath>
-                    <includes>
-                        <include>**/*</include>
-                    </includes>
-                </resource>
-            </resources>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                        <configuration>
+                            <useAgent>false</useAgent>
+                            <gpgArguments>
+                                <arg>--batch</arg>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                                <arg>--no-tty</arg>
+                            </gpgArguments>
+                            <passphrase>${gpg.passphrase}</passphrase>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-antrun-plugin</artifactId>
-                    <version>3.1.0</version>
-                    <executions>
-                        <execution>
-                            <phase>initialize</phase>
-                            <configuration>
-                                <target>
-                                    <exec executable="git" outputproperty="translator.git.branch" failifexecutionfails="false" failonerror="false">
-                                        <arg value="rev-parse"/>
-                                        <arg value="--abbrev-ref"/>
-                                        <arg value="HEAD"/>
-                                    </exec>
-                                    <exec executable="git" outputproperty="translator.git.remoteBranch" failifexecutionfails="false" failonerror="false">
-                                        <arg value="rev-parse"/>
-                                        <arg value="--abbrev-ref"/>
-                                        <arg value="--symbolic-full-name"/>
-                                        <arg value="@{u}"/>
-                                    </exec>
-                                    <exec executable="git" outputproperty="translator.git.commit" failifexecutionfails="false" failonerror="false">
-                                        <arg value="rev-parse"/>
-                                        <arg value="--short"/>
-                                        <arg value="HEAD"/>
-                                    </exec>
-                                    <condition property="translator.git.branch.resolved" value="${translator.git.branch}" else="unknown">
-                                        <and>
-                                            <isset property="translator.git.branch"/>
-                                            <not>
-                                                <equals arg1="${translator.git.branch}" arg2="" trim="true"/>
-                                            </not>
-                                        </and>
-                                    </condition>
-                                    <condition property="translator.git.remoteBranch.resolved" value="${translator.git.remoteBranch}" else="${translator.git.branch.resolved}">
-                                        <and>
-                                            <isset property="translator.git.remoteBranch"/>
-                                            <not>
-                                                <equals arg1="${translator.git.remoteBranch}" arg2="" trim="true"/>
-                                            </not>
-                                        </and>
-                                    </condition>
-                                    <condition property="translator.git.commit.resolved" value="${translator.git.commit}" else="unknown">
-                                        <and>
-                                            <isset property="translator.git.commit"/>
-                                            <not>
-                                                <equals arg1="${translator.git.commit}" arg2="" trim="true"/>
-                                            </not>
-                                        </and>
-                                    </condition>
-                                    <mkdir dir="${project.build.directory}"/>
-                                    <echo file="${project.build.directory}/generated-git.properties">
-                                        translator.git.branch=${translator.git.branch.resolved}
-                                        translator.git.remoteBranch=${translator.git.remoteBranch.resolved}
-                                        translator.git.commit=${translator.git.commit.resolved}
-                                    </echo>
-                                </target>
-                            </configuration>
-                            <goals>
-                                <goal>run</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <files>
+                                <file>${project.build.directory}/generated-git.properties</file>
+                            </files>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>3.1.0</version>
-                    <executions>
-                        <execution>
-                            <id>sign-artifacts</id>
-                            <phase>verify</phase>
-                            <goals>
-                                <goal>sign</goal>
-                            </goals>
-                            <configuration>
-                                <useAgent>false</useAgent>
-                                <gpgArguments>
-                                    <arg>--batch</arg>
-                                    <arg>--pinentry-mode</arg>
-                                    <arg>loopback</arg>
-                                    <arg>--no-tty</arg>
-                                </gpgArguments>
-                                <passphrase>${gpg.passphrase}</passphrase>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <configuration>
+                    <propertiesEncoding>UTF-8</propertiesEncoding>
+                </configuration>
+            </plugin>
 
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>properties-maven-plugin</artifactId>
-                    <version>1.2.1</version>
-                    <executions>
-                        <execution>
-                            <phase>initialize</phase>
-                            <goals>
-                                <goal>read-project-properties</goal>
-                            </goals>
-                            <configuration>
-                                <files>
-                                    <file>${project.build.directory}/generated-git.properties</file>
-                                </files>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.10.1</version>
+            </plugin>
 
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.3.1</version>
-                    <configuration>
-                        <propertiesEncoding>UTF-8</propertiesEncoding>
-                    </configuration>
-                </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>${maven.deploy.classifier}</classifier>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/versions/**</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.10.1</version>
-                </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>${maven.deploy.classifier}</classifier>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.5.0</version>
-                    <executions>
-                        <execution>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>shade</goal>
-                            </goals>
-                            <configuration>
-                                <classifier>${maven.deploy.classifier}</classifier>
-                                <createDependencyReducedPom>false</createDependencyReducedPom>
-                                <filters>
-                                    <filter>
-                                        <artifact>*:*</artifact>
-                                        <excludes>
-                                            <exclude>META-INF/*.SF</exclude>
-                                            <exclude>META-INF/*.DSA</exclude>
-                                            <exclude>META-INF/*.RSA</exclude>
-                                            <exclude>META-INF/versions/**</exclude>
-                                        </excludes>
-                                    </filter>
-                                </filters>
-                                <transformers>
-                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
-                                </transformers>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>${maven.deploy.classifier}</classifier>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>3.3.0</version>
-                    <executions>
-                        <execution>
-                            <id>attach-sources</id>
-                            <goals>
-                                <goal>jar</goal>
-                            </goals>
-                            <configuration>
-                                <classifier>${maven.deploy.classifier}</classifier>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.5.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.6.3</version>
-                    <executions>
-                        <execution>
-                            <id>attach-javadocs</id>
-                            <goals>
-                                <goal>jar</goal>
-                            </goals>
-                            <configuration>
-                                <classifier>${maven.deploy.classifier}</classifier>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
+    <profiles>
+        <profile>
+            <id>full-build</id>
+            <properties>
+                <maven.deploy.classifier>full</maven.deploy.classifier>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.formdev</groupId>
+                    <artifactId>flatlaf</artifactId>
+                    <version>3.5.4</version>
+                </dependency>
+                <dependency>
+                    <groupId>com.vladsch.flexmark</groupId>
+                    <artifactId>flexmark-all</artifactId>
+                    <version>0.64.8</version>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.6.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-full-build-sources</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>add-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/full/java</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
 
-                <plugin>
-                    <groupId>org.sonatype.central</groupId>
-                    <artifactId>central-publishing-maven-plugin</artifactId>
-                    <version>0.5.0</version>
-                    <extensions>true</extensions>
-                    <configuration>
-                        <publishingServerId>central</publishingServerId>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </build>
-
-        <profiles>
-            <profile>
-                <id>full-build</id>
-                <properties>
-                    <maven.deploy.classifier>full</maven.deploy.classifier>
-                </properties>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.formdev</groupId>
-                        <artifactId>flatlaf</artifactId>
-                        <version>3.5.4</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>com.vladsch.flexmark</groupId>
-                        <artifactId>flexmark-all</artifactId>
-                        <version>0.64.8</version>
-                    </dependency>
-                </dependencies>
-                <build>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.codehaus.mojo</groupId>
-                            <artifactId>build-helper-maven-plugin</artifactId>
-                            <version>3.6.0</version>
-                            <executions>
-                                <execution>
-                                    <id>add-full-build-sources</id>
-                                    <phase>generate-sources</phase>
-                                    <goals>
-                                        <goal>add-source</goal>
-                                    </goals>
-                                    <configuration>
-                                        <sources>
-                                            <source>src/full/java</source>
-                                        </sources>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </build>
-            </profile>
-
-            <profile>
-                <id>silent-build</id>
-                <activation>
-                    <activeByDefault>true</activeByDefault>
-                </activation>
-                <properties>
-                    <translator.build.variant>silent</translator.build.variant>
-                    <translator.finalName>${project.artifactId}-${project.version}-silent</translator.finalName>
-                    <maven.deploy.classifier>silent</maven.deploy.classifier>
-                </properties>
-            </profile>
-        </profiles>
-    </project>
+        <profile>
+            <id>silent-build</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <translator.build.variant>silent</translator.build.variant>
+                <translator.finalName>${project.artifactId}-${project.version}-silent</translator.finalName>
+                <maven.deploy.classifier>silent</maven.deploy.classifier>
+            </properties>
+        </profile>
+    </profiles>
+</project>

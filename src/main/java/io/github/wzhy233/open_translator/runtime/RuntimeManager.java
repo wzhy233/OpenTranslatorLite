@@ -1,7 +1,8 @@
-package io.github.wzhy233.open_translator.setup;
+package io.github.wzhy233.open_translator.runtime;
 
 import io.github.wzhy233.open_translator.BuildInfo;
 import io.github.wzhy233.open_translator.config.ConfigManager;
+import io.github.wzhy233.open_translator.setup.SetupStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,8 +21,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-public final class RuntimeSetupManager {
-    private static final Logger logger = LoggerFactory.getLogger(RuntimeSetupManager.class);
+public final class RuntimeManager {
+    private static final Logger logger = LoggerFactory.getLogger(RuntimeManager.class);
     private static final String[] REQUIRED_MODULES = {
             "ctranslate2", "transformers", "sentencepiece", "huggingface_hub"
     };
@@ -31,7 +32,7 @@ public final class RuntimeSetupManager {
     private static final String PYTHON_PROP = "open_translator.python";
     private static final String MODEL_ROOT_PROP = "open_translator.model_root";
 
-    private RuntimeSetupManager() {
+    private RuntimeManager() {
     }
 
     public static SetupStatus inspect() {
@@ -180,7 +181,7 @@ public final class RuntimeSetupManager {
     }
 
     private static Path extractBundledResource(String resourcePath, String prefix, String suffix) {
-        try (InputStream input = RuntimeSetupManager.class.getResourceAsStream(resourcePath)) {
+        try (InputStream input = RuntimeManager.class.getResourceAsStream(resourcePath)) {
             if (input == null) {
                 throw new IllegalStateException("Bundled resource not found: " + resourcePath);
             }

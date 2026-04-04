@@ -16,14 +16,17 @@ import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class CacheManager {
+public class CacheManager implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(CacheManager.class);
 
     private static final String INDEX_FILE = "index.json";
     private static final Gson gson = new GsonBuilder().create();
+    private static final String INDEX_FLUSH_THRESHOLD_PROP = "open_translator.cache_index_flush_threshold";
+    private static final int DEFAULT_INDEX_FLUSH_THRESHOLD = 32;
     private static final ThreadLocal<MessageDigest> SHA_256 = ThreadLocal.withInitial(() -> {
         try {
             return MessageDigest.getInstance("SHA-256");
@@ -38,6 +41,8 @@ public class CacheManager {
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
     private final LongAdder hits = new LongAdder();
     private final LongAdder misses = new LongAdder();
+    private final AtomicInteger pendingIndexWrites = new AtomicInteger();
+    private volatile boolean indexDirty;
 
     public CacheManager(String cachePath) {
         this.cachePath = cachePath;
@@ -104,7 +109,7 @@ public class CacheManager {
                 CacheEntry entry = new CacheEntry(sourceLang, targetLang, fileName);
                 cacheIndex.put(key, entry);
                 memoryCache.put(key, result);
-                saveIndex();
+                markIndexDirty();
             } catch (IOException e) {
                 logger.error("Failed to write cache entry", e);
             }
@@ -151,10 +156,15 @@ public class CacheManager {
     }
 
     private void saveIndex() {
+        if (!indexDirty) {
+            return;
+        }
         try {
             String indexPath = cachePath + File.separator + INDEX_FILE;
             String json = gson.toJson(cacheIndex);
             Files.write(Paths.get(indexPath), json.getBytes(StandardCharsets.UTF_8));
+            indexDirty = false;
+            pendingIndexWrites.set(0);
         } catch (IOException e) {
             logger.error("Failed to save cache index", e);
         }
@@ -176,6 +186,8 @@ public class CacheManager {
             memoryCache.clear();
             hits.reset();
             misses.reset();
+            pendingIndexWrites.set(0);
+            indexDirty = true;
             saveIndex();
         } finally {
             lock.writeLock().unlock();
@@ -215,9 +227,45 @@ public class CacheManager {
             memoryCache.clear();
             hits.reset();
             misses.reset();
+            pendingIndexWrites.set(0);
+            indexDirty = false;
             loadIndex();
         } finally {
             lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void close() {
+        flushIndex();
+    }
+
+    public void flushIndex() {
+        lock.writeLock().lock();
+        try {
+            saveIndex();
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    private void markIndexDirty() {
+        indexDirty = true;
+        int threshold = readIntProperty(INDEX_FLUSH_THRESHOLD_PROP, DEFAULT_INDEX_FLUSH_THRESHOLD);
+        if (pendingIndexWrites.incrementAndGet() >= Math.max(1, threshold)) {
+            saveIndex();
+        }
+    }
+
+    private static int readIntProperty(String name, int defaultValue) {
+        String value = System.getProperty(name);
+        if (value == null || value.trim().isEmpty()) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return defaultValue;
         }
     }
 

@@ -180,8 +180,8 @@ public class Translator {
             throw new IllegalArgumentException("Unsupported language pair: " + pair);
         }
 
-        List<Integer> uncachedIndexes = new ArrayList<>(contents.length);
         List<String> uncachedContents = new ArrayList<>(contents.length);
+        Map<String, List<Integer>> uncachedPositions = new LinkedHashMap<>();
 
         for (int i = 0; i < contents.length; i++) {
             String content = contents[i];
@@ -199,8 +199,13 @@ public class Translator {
                 results[i] = cached;
                 continue;
             }
-            uncachedIndexes.add(i);
-            uncachedContents.add(normalized);
+            List<Integer> positions = uncachedPositions.get(normalized);
+            if (positions == null) {
+                positions = new ArrayList<>();
+                uncachedPositions.put(normalized, positions);
+                uncachedContents.add(normalized);
+            }
+            positions.add(i);
         }
 
         if (uncachedContents.isEmpty()) {
@@ -211,10 +216,12 @@ public class Translator {
             String[] translated = model.translateBatch(sourceLang, targetLang,
                     uncachedContents.toArray(new String[0]));
             for (int i = 0; i < translated.length; i++) {
-                int originalIndex = uncachedIndexes.get(i);
                 String normalized = uncachedContents.get(i);
                 String translatedText = translated[i];
-                results[originalIndex] = translatedText;
+                List<Integer> positions = uncachedPositions.get(normalized);
+                for (int position : positions) {
+                    results[position] = translatedText;
+                }
                 cache.put(sourceLang, targetLang, normalized, translatedText);
             }
             return results;
@@ -285,6 +292,9 @@ public class Translator {
                     executorService.shutdownNow();
                     Thread.currentThread().interrupt();
                 }
+            }
+            if (cache != null) {
+                cache.close();
             }
             if (model != null) {
                 model.close();

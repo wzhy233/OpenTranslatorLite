@@ -1,7 +1,7 @@
 package io.github.wzhy233.open_translator;
 
 import io.github.wzhy233.open_translator.config.ConfigManager;
-import io.github.wzhy233.open_translator.setup.RuntimeSetupManager;
+import io.github.wzhy233.open_translator.runtime.RuntimeManager;
 
 import java.awt.GraphicsEnvironment;
 import java.io.BufferedReader;
@@ -36,7 +36,7 @@ final class TranslatorTestSupport {
 
         if (shouldUseUiSetup()) {
             System.setProperty("open_translator.ui.enabled", "true");
-            RuntimeSetupManager.ensureReady(true);
+            RuntimeManager.ensureReady(true);
         } else {
             System.setProperty("open_translator.ui.enabled", "false");
             runCommand(Arrays.asList(python, "-m", "pip", "install", "-r", "scripts/requirements.txt"));

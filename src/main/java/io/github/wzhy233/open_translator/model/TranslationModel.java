@@ -3,7 +3,7 @@ package io.github.wzhy233.open_translator.model;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.github.wzhy233.open_translator.BuildInfo;
-import io.github.wzhy233.open_translator.setup.RuntimeSetupManager;
+import io.github.wzhy233.open_translator.runtime.RuntimeManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +53,7 @@ public class TranslationModel implements AutoCloseable {
 
     public void initialize() {
         try {
-            RuntimeSetupManager.ensureReady(!BuildInfo.isSilentBuild());
+            RuntimeManager.ensureReady(!BuildInfo.isSilentBuild());
             startWorkers();
             List<String> pairs = fetchSupportedPairs();
             supportedPairs.clear();
@@ -86,7 +86,7 @@ public class TranslationModel implements AutoCloseable {
         request.put("cmd", "translate_batch");
         request.put("pair", sourceLang + "_" + targetLang);
         request.put("texts", contents);
-        request.put("max_batch_size", readIntProp(MAX_BATCH_SIZE_PROP, DEFAULT_MAX_BATCH_SIZE));
+        request.put("max_batch_size", resolveBatchSize(contents.length));
         Map<String, Object> response = borrowWorker().sendRequest(request);
         Object texts = response.get("texts");
         if (!(texts instanceof List<?>)) {
@@ -118,30 +118,50 @@ public class TranslationModel implements AutoCloseable {
     }
 
     public static int defaultWorkerCount() {
-        int cpuCount = Runtime.getRuntime().availableProcessors();
-        int recommended = Math.max(1, Math.min(4, cpuCount / 2));
+        return resolveWorkerCount(Runtime.getRuntime().availableProcessors());
+    }
+
+    static int resolveWorkerCount(int cpuCount) {
+        int normalizedCpuCount = Math.max(1, cpuCount);
+        int recommended = Math.max(1, Math.min(4, normalizedCpuCount / 2));
         return readIntProp(WORKER_COUNT_PROP, recommended);
     }
 
+    static int resolveIntraThreads(int workerCount) {
+        int normalizedWorkers = Math.max(1, workerCount);
+        int availableCpus = Math.max(1, Runtime.getRuntime().availableProcessors());
+        int recommended = Math.max(1, availableCpus / normalizedWorkers);
+        recommended = Math.min(DEFAULT_INTRA_THREADS, recommended);
+        return readIntProp(INTRA_THREADS_PROP, recommended);
+    }
+
+    static int resolveBatchSize(int requestSize) {
+        int configured = readIntProp(MAX_BATCH_SIZE_PROP, DEFAULT_MAX_BATCH_SIZE);
+        int normalizedRequestSize = Math.max(1, requestSize);
+        return Math.max(1, Math.min(configured, normalizedRequestSize));
+    }
+
     private void startWorkers() throws IOException {
-        for (int i = 0; i < defaultWorkerCount(); i++) {
+        int workerCount = defaultWorkerCount();
+        for (int i = 0; i < workerCount; i++) {
             workers.add(startWorker(i));
         }
     }
 
     private WorkerSession startWorker(int index) throws IOException {
+        int workerCount = Math.max(1, defaultWorkerCount());
         List<String> command = new ArrayList<>();
         command.add(resolvePythonExecutable());
         command.add("-u");
         command.add(resolveWorkerScript().toString());
         command.add("--model-root");
-        command.add(RuntimeSetupManager.inspect().modelRoot.toString());
+        command.add(RuntimeManager.inspect().modelRoot.toString());
         command.add("--device");
         command.add(readSetting(DEVICE_PROP, DEVICE_ENV, "cpu"));
         command.add("--compute-type");
         command.add(readSetting(COMPUTE_TYPE_PROP, COMPUTE_TYPE_ENV, "int8"));
         command.add("--intra-threads");
-        command.add(String.valueOf(readIntProp(INTRA_THREADS_PROP, DEFAULT_INTRA_THREADS)));
+        command.add(String.valueOf(resolveIntraThreads(workerCount)));
 
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.redirectErrorStream(false);
@@ -222,7 +242,7 @@ public class TranslationModel implements AutoCloseable {
         if (configured != null && !configured.trim().isEmpty()) {
             return configured;
         }
-        return RuntimeSetupManager.inspect().pythonPath;
+        return RuntimeManager.inspect().pythonPath;
     }
 
     private static String readSetting(String propName, String envName, String defaultValue) {

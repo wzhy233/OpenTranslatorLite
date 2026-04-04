@@ -137,8 +137,22 @@
                                         </not>
                                     </and>
                                 </condition>
-                                <condition property="translator.git.remoteBranch.resolved" value="${translator.git.remoteBranch}" else="${translator.git.branch.resolved}"/>
-                                <condition property="translator.git.commit.resolved" value="${translator.git.commit}" else="unknown"/>
+                                <condition property="translator.git.remoteBranch.resolved" value="${translator.git.remoteBranch}" else="${translator.git.branch.resolved}">
+                                    <and>
+                                        <isset property="translator.git.remoteBranch"/>
+                                        <not>
+                                            <equals arg1="${translator.git.remoteBranch}" arg2="" trim="true"/>
+                                        </not>
+                                    </and>
+                                </condition>
+                                <condition property="translator.git.commit.resolved" value="${translator.git.commit}" else="unknown">
+                                    <and>
+                                        <isset property="translator.git.commit"/>
+                                        <not>
+                                            <equals arg1="${translator.git.commit}" arg2="" trim="true"/>
+                                        </not>
+                                    </and>
+                                </condition>
                                 <mkdir dir="${project.build.directory}"/>
                                 <echo file="${project.build.directory}/generated-git.properties">
                                     translator.git.branch=${translator.git.branch.resolved}

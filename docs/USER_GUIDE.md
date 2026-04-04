@@ -15,19 +15,6 @@ License acceptance is stored and validated per device. On a new device or a new 
 
 This rule applies to every startup path. If setup is incomplete, runtime use is blocked.
 
-## What The Wizard Can Do
-
-- Render this Markdown guide inside the app
-- Show project and dependency links
-- Let the user read and accept the license with a signer name
-- Save the signed license
-- Configure Python path and model directory
-- Install Python dependencies
-- Download translation models
-- Block final completion until the current device is licensed and ready
-- Support light and dark modes
-- Use animated card transitions between setup steps
-
 ## Default Paths
 
 Cache directory:

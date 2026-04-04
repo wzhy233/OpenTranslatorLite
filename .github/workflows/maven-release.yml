@@ -7,6 +7,14 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: silent
+            profile: silent-build
+          - variant: full
+            profile: full-build
     steps:
       - uses: actions/checkout@v4
 
@@ -21,14 +29,21 @@ jobs:
 
       - name: Import GPG Key
         run: |
-          gpg --batch --import <<- EOF
-          ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
-          EOF
+          echo "${{ secrets.MAVEN_GPG_PRIVATE_KEY }}" | gpg --batch --import
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
 
-      - name: Deploy to Maven Central
+      - name: Prepare release artifactId (${{ matrix.variant }})
         run: |
-          mvn clean deploy -B -DskipTests -Dgpg.passphrase="${{ secrets.MAVEN_GPG_PASSPHRASE }}"
+          artifact_id="open-translator-lite-${{ matrix.variant }}"
+          sed -i "0,/<artifactId>open-translator-lite<\\/artifactId>/s//<artifactId>${artifact_id}<\\/artifactId>/" pom.xml
+
+      - name: Deploy to Maven Central (${{ matrix.variant }})
+        run: |
+          mvn clean deploy -B \
+            -P${{ matrix.profile }} \
+            -DskipTests \
+            -Dgpg.passphrase="${{ secrets.MAVEN_GPG_PASSPHRASE }}"
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}

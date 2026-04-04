@@ -27,7 +27,17 @@ OpenTranslatorLite 是一款基于 Java + CTranslate2 worker 的轻量级离线�
 ```xml
 <dependency>
     <groupId>io.github.wzhy233</groupId>
-    <artifactId>open-translator-lite</artifactId>
+    <artifactId>open-translator-lite-silent</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+如果你需要包含 setup UI 的完整版本，请改用：
+
+```xml
+<dependency>
+    <groupId>io.github.wzhy233</groupId>
+    <artifactId>open-translator-lite-full</artifactId>
     <version>1.0.0</version>
 </dependency>
 ```

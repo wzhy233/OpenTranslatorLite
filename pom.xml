@@ -7,7 +7,7 @@
 
     <groupId>io.github.wzhy233</groupId>
     <artifactId>open-translator-lite</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <packaging>jar</packaging>
 
     <name>OpenTranslatorLite</name>
@@ -42,7 +42,6 @@
         <maven.compiler.target>8</maven.compiler.target>
         <translator.build.variant>full</translator.build.variant>
         <translator.finalName>${project.artifactId}-${project.version}</translator.finalName>
-        <maven.deploy.classifier/>
     </properties>
 
     <dependencies>
@@ -186,9 +185,7 @@
                                 <arg>--batch</arg>
                                 <arg>--pinentry-mode</arg>
                                 <arg>loopback</arg>
-                                <arg>--no-tty</arg>
                             </gpgArguments>
-                            <passphrase>${gpg.passphrase}</passphrase>
                         </configuration>
                     </execution>
                 </executions>
@@ -221,7 +218,6 @@
                     <propertiesEncoding>UTF-8</propertiesEncoding>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -239,15 +235,11 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <classifier>${maven.deploy.classifier}</classifier>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <filters>
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
                                         <exclude>META-INF/versions/**</exclude>
                                     </excludes>
                                 </filter>
@@ -271,9 +263,6 @@
                         <goals>
                             <goal>jar</goal>
                         </goals>
-                        <configuration>
-                            <classifier>${maven.deploy.classifier}</classifier>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -288,9 +277,6 @@
                         <goals>
                             <goal>jar</goal>
                         </goals>
-                        <configuration>
-                            <classifier>${maven.deploy.classifier}</classifier>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -310,9 +296,6 @@
     <profiles>
         <profile>
             <id>full-build</id>
-            <properties>
-                <maven.deploy.classifier>full</maven.deploy.classifier>
-            </properties>
             <dependencies>
                 <dependency>
                     <groupId>com.formdev</groupId>
@@ -358,7 +341,6 @@
             <properties>
                 <translator.build.variant>silent</translator.build.variant>
                 <translator.finalName>${project.artifactId}-${project.version}-silent</translator.finalName>
-                <maven.deploy.classifier>silent</maven.deploy.classifier>
             </properties>
         </profile>
     </profiles>

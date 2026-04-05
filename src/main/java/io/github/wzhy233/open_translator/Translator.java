@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Translator {
     private static final Logger logger = LoggerFactory.getLogger(Translator.class);
+    private static final String AUTO_LANGUAGE = "auto";
     private static final AtomicBoolean bannerPrinted = new AtomicBoolean(false);
     private static final String STARTUP_BANNER =
             "\n" +
@@ -101,12 +102,15 @@ public class Translator {
         sourceLang = sourceLang.toLowerCase().trim();
         targetLang = targetLang.toLowerCase().trim();
 
-        if (sourceLang.equals(targetLang)) {
-            return content;
-        }
-
         if (content.trim().isEmpty()) {
             return "";
+        }
+
+        String normalized = normalizeContent(content);
+        sourceLang = resolveSourceLanguage(sourceLang, targetLang, normalized);
+
+        if (sourceLang.equals(targetLang)) {
+            return content;
         }
 
         String pair = sourceLang + "-" + targetLang;
@@ -115,8 +119,6 @@ public class Translator {
         }
 
         try {
-            String normalized = normalizeContent(content);
-
             String cached = cache.get(sourceLang, targetLang, normalized);
             if (cached != null) {
                 return cached;
@@ -170,18 +172,20 @@ public class Translator {
         targetLang = targetLang.toLowerCase().trim();
 
         String[] results = new String[contents.length];
-        if (sourceLang.equals(targetLang)) {
+        if (!AUTO_LANGUAGE.equals(sourceLang) && sourceLang.equals(targetLang)) {
             System.arraycopy(contents, 0, results, 0, contents.length);
             return results;
         }
 
-        String pair = sourceLang + "-" + targetLang;
-        if (!isSupportedPair(pair)) {
-            throw new IllegalArgumentException("Unsupported language pair: " + pair);
+        if (!AUTO_LANGUAGE.equals(sourceLang)) {
+            String pair = sourceLang + "-" + targetLang;
+            if (!isSupportedPair(pair)) {
+                throw new IllegalArgumentException("Unsupported language pair: " + pair);
+            }
         }
 
-        List<String> uncachedContents = new ArrayList<>(contents.length);
-        Map<String, List<Integer>> uncachedPositions = new LinkedHashMap<>();
+        Map<String, List<String>> uncachedContentsBySource = new LinkedHashMap<>();
+        Map<String, Map<String, List<Integer>>> uncachedPositionsBySource = new LinkedHashMap<>();
 
         for (int i = 0; i < contents.length; i++) {
             String content = contents[i];
@@ -194,11 +198,21 @@ public class Translator {
             }
 
             String normalized = normalizeContent(content);
-            String cached = cache.get(sourceLang, targetLang, normalized);
+            String resolvedSourceLang = resolveSourceLanguage(sourceLang, targetLang, normalized);
+            if (resolvedSourceLang.equals(targetLang)) {
+                results[i] = content;
+                continue;
+            }
+
+            String cached = cache.get(resolvedSourceLang, targetLang, normalized);
             if (cached != null) {
                 results[i] = cached;
                 continue;
             }
+            List<String> uncachedContents = uncachedContentsBySource.computeIfAbsent(
+                    resolvedSourceLang, ignored -> new ArrayList<>());
+            Map<String, List<Integer>> uncachedPositions = uncachedPositionsBySource.computeIfAbsent(
+                    resolvedSourceLang, ignored -> new LinkedHashMap<>());
             List<Integer> positions = uncachedPositions.get(normalized);
             if (positions == null) {
                 positions = new ArrayList<>();
@@ -208,21 +222,26 @@ public class Translator {
             positions.add(i);
         }
 
-        if (uncachedContents.isEmpty()) {
+        if (uncachedContentsBySource.isEmpty()) {
             return results;
         }
 
         try {
-            String[] translated = model.translateBatch(sourceLang, targetLang,
-                    uncachedContents.toArray(new String[0]));
-            for (int i = 0; i < translated.length; i++) {
-                String normalized = uncachedContents.get(i);
-                String translatedText = translated[i];
-                List<Integer> positions = uncachedPositions.get(normalized);
-                for (int position : positions) {
-                    results[position] = translatedText;
+            for (Map.Entry<String, List<String>> entry : uncachedContentsBySource.entrySet()) {
+                String resolvedSourceLang = entry.getKey();
+                List<String> uncachedContents = entry.getValue();
+                String[] translated = model.translateBatch(resolvedSourceLang, targetLang,
+                        uncachedContents.toArray(new String[0]));
+                Map<String, List<Integer>> uncachedPositions = uncachedPositionsBySource.get(resolvedSourceLang);
+                for (int i = 0; i < translated.length; i++) {
+                    String normalized = uncachedContents.get(i);
+                    String translatedText = translated[i];
+                    List<Integer> positions = uncachedPositions.get(normalized);
+                    for (int position : positions) {
+                        results[position] = translatedText;
+                    }
+                    cache.put(resolvedSourceLang, targetLang, normalized, translatedText);
                 }
-                cache.put(sourceLang, targetLang, normalized, translatedText);
             }
             return results;
         } catch (Exception e) {
@@ -237,11 +256,28 @@ public class Translator {
      * @return 语言对列表
      */
     public String[] getSupportedLanguagePairs() {
-        return supportedPairs.toArray(new String[0]);
+        Set<String> pairs = new LinkedHashSet<>(supportedPairs);
+        for (String pair : supportedPairs) {
+            String[] parts = splitPair(pair);
+            if (parts != null) {
+                pairs.add(AUTO_LANGUAGE + "-" + parts[1]);
+            }
+        }
+        return pairs.toArray(new String[0]);
     }
 
     public boolean isSupportedPair(String pair) {
-        return pair != null && supportedPairs.contains(pair);
+        if (pair == null) {
+            return false;
+        }
+        String normalizedPair = pair.toLowerCase().trim();
+        if (supportedPairs.contains(normalizedPair)) {
+            return true;
+        }
+        String[] parts = splitPair(normalizedPair);
+        return parts != null
+                && AUTO_LANGUAGE.equals(parts[0])
+                && hasAnySourceForTarget(parts[1]);
     }
 
     /**
@@ -319,6 +355,117 @@ public class Translator {
             }
         }
         return normalized.toString();
+    }
+
+    private String resolveSourceLanguage(String sourceLang, String targetLang, String content) {
+        if (!AUTO_LANGUAGE.equals(sourceLang)) {
+            return sourceLang;
+        }
+        Set<String> candidateLanguages = getCandidateSourceLanguages(targetLang);
+        if (candidateLanguages.isEmpty()) {
+            throw new IllegalArgumentException("Unsupported language pair: " + AUTO_LANGUAGE + "-" + targetLang);
+        }
+
+        LinkedHashSet<String> detectionCandidates = new LinkedHashSet<>(candidateLanguages);
+        detectionCandidates.add(targetLang);
+        return detectLanguage(content, detectionCandidates, targetLang);
+    }
+
+    private Set<String> getCandidateSourceLanguages(String targetLang) {
+        Set<String> candidates = new LinkedHashSet<>();
+        for (String pair : supportedPairs) {
+            String[] parts = splitPair(pair);
+            if (parts != null && targetLang.equals(parts[1])) {
+                candidates.add(parts[0]);
+            }
+        }
+        return candidates;
+    }
+
+    private boolean hasAnySourceForTarget(String targetLang) {
+        for (String pair : supportedPairs) {
+            String[] parts = splitPair(pair);
+            if (parts != null && targetLang.equals(parts[1])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String[] splitPair(String pair) {
+        String[] parts = pair.split("-", 2);
+        return parts.length == 2 ? parts : null;
+    }
+
+    private static String detectLanguage(String content, Set<String> candidates, String fallbackLanguage) {
+        Map<Character.UnicodeScript, Integer> scriptCounts = new EnumMap<>(Character.UnicodeScript.class);
+        int latinLetters = 0;
+        int hanLetters = 0;
+
+        for (int i = 0; i < content.length(); ) {
+            int codePoint = content.codePointAt(i);
+            i += Character.charCount(codePoint);
+            if (!Character.isLetter(codePoint)) {
+                continue;
+            }
+            Character.UnicodeScript script = Character.UnicodeScript.of(codePoint);
+            scriptCounts.merge(script, 1, Integer::sum);
+            if (script == Character.UnicodeScript.LATIN) {
+                latinLetters++;
+            } else if (script == Character.UnicodeScript.HAN) {
+                hanLetters++;
+            }
+        }
+
+        String bestLanguage = fallbackLanguage;
+        int bestScore = -1;
+        for (String candidate : candidates) {
+            int score = scoreLanguage(candidate, scriptCounts, latinLetters, hanLetters);
+            if (score > bestScore) {
+                bestScore = score;
+                bestLanguage = candidate;
+            }
+        }
+        return bestLanguage;
+    }
+
+    private static int scoreLanguage(String language,
+                                     Map<Character.UnicodeScript, Integer> scriptCounts,
+                                     int latinLetters,
+                                     int hanLetters) {
+        switch (language) {
+            case "zh":
+                return scriptCounts.getOrDefault(Character.UnicodeScript.HAN, 0) * 100;
+            case "en":
+                return latinLetters * 100;
+            case "ja":
+                return scriptCounts.getOrDefault(Character.UnicodeScript.HIRAGANA, 0) * 100
+                        + scriptCounts.getOrDefault(Character.UnicodeScript.KATAKANA, 0) * 100
+                        + hanLetters * 10;
+            case "ko":
+                return scriptCounts.getOrDefault(Character.UnicodeScript.HANGUL, 0) * 100;
+            case "ru":
+            case "uk":
+            case "bg":
+            case "sr":
+                return scriptCounts.getOrDefault(Character.UnicodeScript.CYRILLIC, 0) * 100;
+            case "ar":
+            case "fa":
+            case "ur":
+                return scriptCounts.getOrDefault(Character.UnicodeScript.ARABIC, 0) * 100;
+            case "he":
+                return scriptCounts.getOrDefault(Character.UnicodeScript.HEBREW, 0) * 100;
+            case "hi":
+            case "mr":
+            case "ne":
+                return scriptCounts.getOrDefault(Character.UnicodeScript.DEVANAGARI, 0) * 100;
+            case "th":
+                return scriptCounts.getOrDefault(Character.UnicodeScript.THAI, 0) * 100;
+            case "el":
+                return scriptCounts.getOrDefault(Character.UnicodeScript.GREEK, 0) * 100;
+            default:
+                return latinLetters;
+        }
     }
 
     private void checkState() {

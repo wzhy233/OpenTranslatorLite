@@ -115,12 +115,12 @@ public class Demo {
     public static void main(String[] args) throws Exception {
         Translator translator = new Translator();
         try {
-            String text = translator.translate("en", "zh", "Hello world");
+            String text = translator.translate("auto", "zh", "Hello world");
             System.out.println(text);
 
-            String[] batch = translator.translateBatch("en", "zh", new String[]{
+            String[] batch = translator.translateBatch("auto", "zh", new String[]{
                     "Hello",
-                    "World"
+                    "你好"
             });
             System.out.println(String.join(" | ", batch));
         } finally {

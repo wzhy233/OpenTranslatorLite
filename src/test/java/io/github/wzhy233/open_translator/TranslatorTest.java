@@ -51,6 +51,8 @@ public class TranslatorTest {
     public void testSupportedPairs() {
         assertTrue(translator.isSupportedPair("en-zh"));
         assertTrue(translator.isSupportedPair("zh-en"));
+        assertTrue(translator.isSupportedPair("auto-zh"));
+        assertTrue(translator.isSupportedPair("auto-en"));
     }
 
     @Test
@@ -78,6 +80,29 @@ public class TranslatorTest {
         assertFalse(results[1].trim().isEmpty());
         assertFalse(results[0].contains("\uFFFD"));
         assertFalse(results[1].contains("\uFFFD"));
+    }
+
+    @Test
+    public void testAutoTranslation() {
+        String result = translator.translate("auto", "zh", "Hello world");
+        assertNotNull(result);
+        assertFalse(result.trim().isEmpty());
+        assertFalse(result.contains("\uFFFD"));
+    }
+
+    @Test
+    public void testAutoKeepsTargetLanguageContent() {
+        String result = translator.translate("auto", "zh", "你好，世界");
+        assertEquals("你好，世界", result);
+    }
+
+    @Test
+    public void testAutoBatchTranslation() {
+        String[] results = translator.translateBatch("auto", "zh", new String[]{"Hello", "你好"});
+        assertEquals(2, results.length);
+        assertFalse(results[0].trim().isEmpty());
+        assertEquals("你好", results[1]);
+        assertFalse(results[0].contains("\uFFFD"));
     }
 
     @Test

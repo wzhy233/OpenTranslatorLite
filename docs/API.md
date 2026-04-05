@@ -44,6 +44,7 @@ String result = translator.translate("en", "zh", "Hello world");
 说明
 
 - 支持语言对：`en-zh`、`zh-en`
+- `sourceLang` 支持传入 `auto` 自动检测源语言，例如 `translator.translate("auto", "zh", "Hello world")`
 - `sourceLang`、`targetLang`、`content` 不能为 `null`
 - 同语种输入会直接返回原文
 - 空字符串会直接返回空字符串
@@ -85,6 +86,8 @@ String[] pairs = translator.getSupportedLanguagePairs();
 ```java
 boolean ok = translator.isSupportedPair("en-zh");
 ```
+
+`auto-*` 也会被视为可用语言对，只要当前模型里存在任意 `*-目标语言` 的真实语言对。
 
 ## 缓存接口
 
